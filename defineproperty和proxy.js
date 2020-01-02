@@ -103,19 +103,6 @@ function observable(obj) {
 /**
  * 将对象的属性用 Object.defineProperty() 进行设置
  */
-// function defineReactive(obj, key, val) {
-//     Object.defineProperty(obj, key, {
-//         get() {
-//             console.log(`${key}属性被读取了...`);
-//             return val;
-//         },
-//         set(newVal) {
-//             console.log(`${key}属性被修改了...`);
-//             val = newVal;
-//         }
-//     })
-// }
-
 function Dep () {
     this.subs = [];
 }
