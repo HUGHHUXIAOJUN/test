@@ -55,6 +55,7 @@ Subject.prototype.notify = function (context) {
 function Observer () {
     this.update = function (context) {
         console.log(context);
+        
     }
 }
 

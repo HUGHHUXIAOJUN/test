@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="div1">
+        今天天气真好啊
+        <span class="span1">是的呢</span>
+    </div>
+    <div class="div2">
+        明天天气怎么样
+        <span class="span2">也不错</span>
+    </div>
+</body>
+</html>
+
+<script>
+    let deps=new WeakMap();
+    function on(obj,fn){
+        if(!deps.get(obj)){
+            deps.set(obj,new Set())
+        }
+        deps.get(obj).add(fn)
+    }
+    function emit(obj){
+        let args=[].slice.call(arguments,1);
+        (deps.get(obj)||[]).forEach(item=>{
+            item.apply(this,args);
+        })
+    }
+    function del(obj){
+        deps.delete(obj)
+    }
+    function Vue({data,datakey,select}){
+        let value=data[datakey];
+        this.data=data;
+        Object.defineProperty(data,datakey,{
+            get(){
+                console.log('获取了')
+                return value
+            },
+            set(newVal){
+                console.log('设置了')
+                if (newVal === value) {
+                    return;
+                }
+                value = newVal;
+                emit(data,select,value);
+            }
+        })
+        on(data,update)
+    }
+    function update(select,newVal){
+        let dom=document.querySelector(select);
+        dom.innerHTML=newVal
+    }
+    let vue=new Vue({
+        data:{
+            one:'qqq'
+        },
+        datakey:'one',
+        select:'.span1'
+    })
+    let vue2=new Vue({
+        data:{
+            one:'qqq'
+        },
+        datakey:'one',
+        select:'.span2'
+    })
+    
+    
+</script>

@@ -6,7 +6,6 @@ class MyPromise{
         this.fulfilledEvent=[]; //当前实例成功的事件池；
         this.rejectedEvent=[]; //当前实例失败的事件池；
         let resolve = (result)=>{ //只有调用resolve时，该实例的状态要改变为成功态；
-            console.log(new Date().getTime(),'执行resolve',this.state,result)
             if(this.state!=="pending")return; //如果不是pending;不需要往下执行
             this.state="fulfilled";
             // 循环成功态的事件池；依次执行；
@@ -17,9 +16,7 @@ class MyPromise{
                         item(result);
                     }
                 })
-                console.log(new Date().getTime(),'由于堆栈机制我后执行resolve')
             },0)
-            console.log(new Date().getTime(),'执行resolve',this.state)
         }
         let reject = (result)=>{ //只有调用resolve时，该实例的状态要改变为失败态；
             if(this.state!=="pending")return;
@@ -44,30 +41,27 @@ class MyPromise{
     }
     then(resolveFn,rejectFn){ //p可以调用then方法，说明then方法在promise的原型上；所以把then放到了MyPromise的原型上
         //实现then的链式写法，需要then返回一个promise的实例；
-        console.log('我是then方法先执行')
         return new MyPromise((resolve,reject)=>{
             this.fulfilledEvent.push((result)=>{
-                //console.log(resolveFn);
                 let x = resolveFn(result);
                 // x.then : 向x的事件池中放入resolve和reject方法；
-                // console.log(resolve);
-                console.log('判断传参，确认返回,如果x是mypromise还是需要继续执行下去，如果不是结束,resolve清除定时器，并把状态改变')
                 x instanceof MyPromise?x.then(resolve,reject):resolve();
             });
         })
     }
 }
-let p=new MyPromise(function (resolve,reject) {
-    console.log('我是新promise')
-        setTimeout(()=>{
-            console.log('ajax请求')
-            //第一没有push 所以resolve中队列未执行
-            resolve('resolve1111111')
-        },2000)
-}).then(res=>{
-    console.log('执行then')
-    console.log(res)
-})
+// let p=new MyPromise(function (resolve,reject) {
+//     console.log('我是新promise')
+//         setTimeout(()=>{
+//             console.log('ajax请求')
+//             //第一没有push 所以resolve中队列未执行
+//             resolve('resolve1111111')
+//         },2000)
+//         console.log('我是新promise定时器之后的函数')
+// }).then(res=>{
+//     console.log('新promise执行then')
+//     console.log(res)
+// })
 
 // let p = new MyPromise(function (resolve,reject) {
 //     resolve(100);

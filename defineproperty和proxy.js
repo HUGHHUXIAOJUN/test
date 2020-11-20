@@ -2,90 +2,90 @@
 //     name:'hugh',
 //     age:15
 // }
-let val='tom';
-let person={};
-Object.defineProperty(person,'name',{
-    get(){
-        console.log('name属性被读取了...');
-        return val;
-    },
-    set(newVal){
-        console.log('name属性被修改了...');
-        val = newVal;
-    }
-})
-person.name=val;
-console.log(person.name)
+// let val='tom';
+// let person={};
+// Object.defineProperty(person,'name',{
+//     get(){
+//         console.log('name属性被读取了...');
+//         return val;
+//     },
+//     set(newVal){
+//         console.log('name属性被修改了...');
+//         val = newVal;
+//     }
+// })
+// person.name=val;
+// console.log(person.name)
 
-let user= {
-    name:'John',
-    surname:'Doe'
-}
-let proxy=new Proxy(user,{
-    get(target,property){
-        let value=target[property];
-        if(!value){
-            throw new Error(`The property is [${property}] does not exist`)
-        }
-        return value
-    }
-})
-let printUser=(property)=>{
-    console.log(`The user ${property} is ${proxy[property]}`)
-}
-printUser('name') //the name is john
-printUser('email')//the property [email] does not exist
-let obj=new proxy({},{
-    set(target,property,value){
-        if(property==='name'&&Object.prototype.toString.call(value)!=='[object String]'){
-            throw  new Error(`The value for [${property} must be a string]`)
-        }
-        target[property]=value
-    }
-})
+// let user= {
+//     name:'John',
+//     surname:'Doe'
+// }
+// let proxy=new Proxy(user,{
+//     get(target,property){
+//         let value=target[property];
+//         if(!value){
+//             throw new Error(`The property is [${property}] does not exist`)
+//         }
+//         return value
+//     }
+// })
+// let printUser=(property)=>{
+//     console.log(`The user ${property} is ${proxy[property]}`)
+// }
+// printUser('name') //the name is john
+// printUser('email')//the property [email] does not exist
+// let obj=new proxy({},{
+//     set(target,property,value){
+//         if(property==='name'&&Object.prototype.toString.call(value)!=='[object String]'){
+//             throw  new Error(`The value for [${property} must be a string]`)
+//         }
+//         target[property]=value
+//     }
+// })
 //let p= new Proxy(target,handler)
-obj.name=1;//name must string
+//obj.name=1;//name must string
 //格式化
 //价值和类型修正
 //数据绑定
 //调试
 //具有代理的API - 更复杂的示例
-const api = new Proxy({}, {
-    get(target, key, context) {
-        return target[key] || ['get', 'post'].reduce((acc, key) => {
-            acc[key] = (config, data) => {
+// const api = new Proxy({}, {
+//     get(target, key, context) {
+//         return target[key] || ['get', 'post'].reduce((acc, key) => {
+//             acc[key] = (config, data) => {
 
-                if (!config && !config.url || config.url === '') throw new Error('Url cannot be empty.');
-                let isPost = key === 'post';
+//                 if (!config && !config.url || config.url === '') throw new Error('Url cannot be empty.');
+//                 let isPost = key === 'post';
 
-                if (isPost && !data) throw new Error('Please provide data in JSON format when using POST request.');
+//                 if (isPost && !data) throw new Error('Please provide data in JSON format when using POST request.');
 
-                config.headers = isPost ? Object.assign(config.headers || {}, { 'content-type': 'application/json;chartset=utf8' }) :
-                    config.headers;
+//                 config.headers = isPost ? Object.assign(config.headers || {}, { 'content-type': 'application/json;chartset=utf8' }) :
+//                     config.headers;
 
-                return new Promise((resolve, reject) => {
-                    let xhr = new XMLHttpRequest();
-                    xhr.open(key, config.url);
-                    if (config.headers) {
-                        Object.keys(config.headers).forEach((header) => {
-                            xhr.setRequestHeader(header, config.headers[header]);
-                        });
-                    }
-                    xhr.onload = () => (xhr.status === 200 ? resolve : reject)(xhr);
-                    xhr.onerror = () => reject(xhr);
-                    xhr.send(isPost ? JSON.stringify(data) : null);
-                });
-            };
-            return acc;
-        }, target)[key];
-    },
-    set() {
-        throw new Error('API methods are readonly');
-    },
-    deleteProperty() {
-        throw new Error('API methods cannot be deleted!');
-    }
-});
+//                 return new Promise((resolve, reject) => {
+//                     let xhr = new XMLHttpRequest();
+//                     xhr.open(key, config.url);
+//                     if (config.headers) {
+//                         Object.keys(config.headers).forEach((header) => {
+//                             xhr.setRequestHeader(header, config.headers[header]);
+//                         });
+//                     }
+//                     xhr.onload = () => (xhr.status === 200 ? resolve : reject)(xhr);
+//                     xhr.onerror = () => reject(xhr);
+//                     xhr.send(isPost ? JSON.stringify(data) : null);
+//                 });
+//             };
+//             return acc;
+//         }, target)[key];
+//     },
+//     set() {
+//         throw new Error('API methods are readonly');
+//     },
+//     deleteProperty() {
+//         throw new Error('API methods cannot be deleted!');
+//     }
+// });
 
 /**
  * 循环遍历数据对象的每个属性
