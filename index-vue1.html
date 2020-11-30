@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input type="text" >
+    <div></div>
+</body>
+<script>
+    var input = document.documentElement.querySelector('input'),
+    div = document.documentElement.querySelector('div'),
+    data={
+        text:'hhh'
+    }
+    div.innerHTML=data.text;
+    Object.defineProperty(data,'text',{
+        get:function(){
+            return text 
+        },
+        set:function(newV){
+            console.log('set',newV)
+            div.innerHTML=newV;
+            input.value=newV;
+        }
+    })
+    input.oninput=(e)=>{
+        console.log('input')
+        data.text=e.target.value;
+    }
+    setTimeout(()=>{
+        data.text='2s之后'
+    },2000)
+</script>
+</html>

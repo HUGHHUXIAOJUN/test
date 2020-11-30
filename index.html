@@ -6,6 +6,32 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <h1>首页啊</h1>
+    <div class="div">
+        <div>复制ssssssaaaas</div>
+    </div>
 </body>
 </html>
+<script>
+    let div = document.querySelector('.div');
+    div.onclick=copy2
+    function copy() {
+				let range = document.createRange();
+                range.selectNode(this)
+                let selection = window.getSelection();
+                if(selection.rangeCount>0)selection.removeAllRanges();
+                selection.addRange(range);
+                console.log(range,selection)
+				let result = document.execCommand("copy")
+				console.log(result, result ? 1 : 2)
+            }
+            function copy2(params) {
+                let textarea = document.createElement('textarea');
+                textarea.value='222';
+                document.body.appendChild(textarea)
+                textarea.select();
+                textarea.setSelectionRange(0,'222'.length);
+                
+                let result = document.execCommand('copy');
+                textarea.remove()
+            }
+</script>

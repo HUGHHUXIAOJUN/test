@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+</html>
+<script>
+    //TODO
+    /**
+     * 监听 hash 和histroy（pushState）
+     * 保存路由信息找到对应组件
+     * 2个组件 router-view  和 router-link
+     * 
+     * 
+    */
+   class History {
+       listen(cb){
+        window.addEventListener('hashchange',function (params) {
+            console.log('hash-change',window.location.hash)
+            cb&&cb(window.location.hash)
+        })
+       }
+   }
+   function mather(routes,path,index) {
+       let paths = path.split('/');
+       for(let routeName in routes){
+           let route = routes[routeName]
+           if(route.path.replace(/^\//,'')==path[index].replace(/^#\//,'')){
+               if(route.children){
+                   let components = mather(rote,children,path,index);
+                   if(components){
+                       continue;
+                   }
+                   return [route.component,...components]
+               }else if(index>=paths.length){
+                    return [route.component]
+               }else{
+                   continue;
+               }
+           }
+           return false
+       }
+   }
+   function getMatchedComponent(routes,path, matchIndex) {
+       let macthRes = mathcer(routes,path,0);
+       if(!macthRes){
+           return null
+       }
+       return {
+           ...macthRes[matchIndex-1]
+       }
+   }
+   export default class vueRouter{
+    constructor({routes}) {
+        this.routes = routes;
+        this.history = new History();
+        this.path=window.location.path;
+        this.history.listen((path)=>{
+            this.path=path;
+            console.log('vm',this.vm)
+            vm.$forecUpdate()
+        })
+
+    }
+    init(vm){
+        this.vm=vm
+    }
+    install(Vue){
+        //todo view / link
+        Vue.mixin({
+            beforeCreate(){
+                if(this.$options.roter){
+                    this.$options.router.init(this);
+                    this.routerRoot = true
+                }else{
+                    this.routerRoot=(this.$parent && this.$parent.routerRoot) || true
+                }
+            }
+        })
+        Vue.component('router-view',{
+            functional:true,
+            render(createElement,{props,childrenmparent,pareng,data}){
+                parent.isRouterView=true;
+                let depath = 0
+                let searchedParent = parent;
+                while(searchedParent && searchedParent.routerRoot !== searchedParent){
+                    if(searchedParent.isRouterView){
+                        depath++;
+                    }
+                    searchedParent = searchedParent.$parent;
+                }
+                const router = searchedParent.$options.router;
+                const path = router.path.replace(/^\//,'');
+                const mathcedRoute = router.routes.find(route => {
+                    route.path.replace(/^\//,'') === path.replace.replace(/^#\//,'')
+                })
+                console.log(router)
+                
+                const mathedComponent =getMatchedComponent(router.routes,path,depath);
+                //const mathedComponent = mathcedRoute.component;
+                // let comp = {
+                //     template :'<div>我是routerview中创建的组件</div>'
+                // }
+                return createElement(mathedComponent)
+                // return createElement(
+                //     'div',
+                //     {
+                //         class:'java-education'
+                //     }
+                // )
+            }
+        })
+
+
+    }
+
+
+   }
+   
+
+</script>

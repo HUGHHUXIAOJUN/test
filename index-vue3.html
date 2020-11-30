@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+</html>
+<script>
+    //TODO
+    /**
+     * 监听 hash 和histroy（pushState）
+     * 保存路由信息找到对应组件
+     * 2个组件 router-view  和 router-link
+     * 
+     * 
+    */
+   class History {
+       listen(cb){
+        window.addEventListener('hashchange',function (params) {
+            console.log('hash-change',window.location.hash)
+            cb&&cb(window.location.hash)
+        })
+       }
+   }
+   export default class vueRouter{
+    constructor({routes}) {
+        this.routes = routes;
+        this.history = new History();
+        this.path=window.location.path;
+        this.history.listen((path)=>{
+            this.path=path;
+            console.log('vm',this.vm)
+            vm.$forecUpdate()
+        })
+
+    }
+    init(vm){
+        this.vm=vm
+    }
+    install(Vue){
+        //todo view / link
+        Vue.mixin({
+            beforeCreate(){
+                this.$options.router.init(this);
+            }
+        })
+        Vue.component('router-view',{
+            functional:true,
+            render(createElement,{props,childrenmparent,pareng,data}){
+                const router = parent.$options.router;
+                const path = router.path;
+                const mathcedRoute = router.routes.find(route => {
+                    route.path.replace(/^\//,'') === path.replace.replace(/^#\//,'')
+                })
+                console.log(router)
+                const mathedComponent = mathcedRoute.component;
+                // let comp = {
+                //     template :'<div>我是routerview中创建的组件</div>'
+                // }
+                return createElement(mathedComponent)
+                // return createElement(
+                //     'div',
+                //     {
+                //         class:'java-education'
+                //     }
+                // )
+            }
+        })
+
+
+    }
+
+
+   }
+   
+
+</script>
