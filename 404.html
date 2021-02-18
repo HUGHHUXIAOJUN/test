@@ -1,11 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+
 <body>
-<h1>404</h1>
-<h1>NOT FOUND</h1>
+    <h1>404</h1>
+    <h1>NOT FOUND</h1>
 </body>
+<script>
+    // var arr = [];
+    // var spiralOrder = function (matrix) {
+    //     m = matrix.length;
+    //     let n = matrix[0].length;
+    //     arr.push(...matrix.shift())
+    //     if (m > 1) {
+    //         for (let i = 0; i < n - 2; i++) {
+    //             arr.push(matrix[i].pop())
+    //         }
+    //         arr.push(...matrix.pop().reverse())
+    //         console.log(matrix, arr)
+    //         return spiralOrder(matrix)
+    //     } else {
+    //         return arr
+    //     }
+
+    // };
+    // console.log(spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+
+    // var merge = function (A, m, B, n) {
+    //     let arrA = A.slice(0, m);
+    //     return arrT = [...arrA, ...B].sort(function (a, b) { 
+    //         if(a<b)return -1
+    //         if(a>b)return 1
+    //         return 0
+    //      })
+    // };
+    // console.log(merge([1,2,3,4,0,0,0,0],4,[2,5,6,5],4))
+
+    // var rotate = function (matrix) {
+    //     const n = matrix.length;
+    //     const matrix_new = [...matrix]
+    //     // for (let i = 0; i < n; i++) {
+    //     //     for (let j = 0; j < n; j++) {
+    //     //         matrix_new[j][n - i - 1] = matrix[i][j];
+    //     //     }
+    //     // }
+    //     for (let i = 0; i < n; i++) {
+    //         for (let j = 0; j < n; j++) {
+    //             matrix[i][j] = matrix_new[i][j];
+    //         }
+    //     }
+    //     console.log(matrix_new, matrix)
+    // };
+    // var rotate = function (matrix) {
+    //     let n = matrix.length, m = Array.from({ length: n }, (_, i) => matrix[i].slice())
+    //     console.log(m)
+    //     for (let i = n; i--;)
+    //         for (let j = n; j--;)
+    //             matrix[i][j] = m[n - 1 - j][i]
+    // };
+    // console.log(rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    var hasCycle = function (head) {
+        try {
+            console.log(JSON.stringify(head))
+            return false
+        } catch {
+            return true
+        }
+    }
+    console.log(hasCycle([2,1,3]))
+</script>
+
 </html>
