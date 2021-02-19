@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <div>ssss {{msg}}</div>
+        <input type="text" v-model='msg'>
+        <div @click='handler'>{{msg}}</div>
+    </div>
+</body>
+<script>
+    const utils={
+        getValue(vm,datakey){
+            return vm.$data[datakey.trim()]
+        },
+        setValue(vm,datakey,newVal){
+            vm.$data[datakey.trim()]=newVal
+        },
+        text(node,value,vm){
+            let result;
+            if(value.includes('{{')){
+                //{{msg}}
+                result = value.replace(/\{\{(.+?)\}\}/g,(...args)=>{
+                    new Watcher(vm,args[1],(newVal)=>{
+                        this.textUpdater(node,newVal)
+                    })
+                    console.log(args)
+                    return this.getValue(vm,args[1])
+                })
+            }else{
+                //v-text
+            }
+            this.textUpdater(node,result)
+        },
+        model(node,key,vm,eventName){
+            let initValue = this.getValue(vm,key);
+            new Watcher(vm,key,(newVal)=>{
+                this.modeUpdater(node,newVal)
+            })
+            node.addEventListener('input',(e)=>{
+                const newValue = e.target.value;
+                this.setValue(vm,key,newValue)
+            })
+            this.modeUpdater(node,initValue)
+        },
+        on(node,value,vm,eventName){
+            const fn=vm.$options.methods[value];
+            node.addEventListener(eventName,fn.bind(vm),false)
+        },
+        textUpdater(node,result){
+            node.textContent=result
+        },
+        modeUpdater(node,value){
+            node.value=value
+        }
+    }
+    class Watcher{
+        constructor(vm,datakey,cb){
+            this.vm=vm;
+            this.datakey=datakey;
+            this.cb=cb;
+            this.oldValue=this.getOldValue(this.vm,this.datakey)
+        }
+        getOldValue(vm,datakey){
+            Dep.target=this;
+            let oldValue=utils.getValue(this.vm,this.datakey);
+            Dep.target=null;
+            return oldValue
+        }
+        update(){
+            const newValue=utils.getValue(this.vm,this.datakey);
+            if(newValue!==this.oldValue){
+                this.cb(newValue)
+            }
+            return
+        }
+    }
+    class Dep{
+        constructor(){
+            this.collect=[];
+        }
+        addWathcer(watcher){
+            this.collect.push(watcher);
+        }
+        notify(){
+            this.collect.forEach(watcher=>{
+                watcher.update()
+            })
+        }
+    }
+    class Observer{
+        constructor(data){
+            this.observe(data)
+        }
+        observe(data){
+            if(data && typeof data === 'object'){
+                Object.keys(data).forEach(datakey=>{
+                    this.defineReactive(data,datakey,data[datakey])
+                })
+            }
+        }
+        defineReactive(data,key,value){
+            this.observe(value)
+            const dep = new Dep();
+            Object.defineProperty(data,key,{
+                get:()=>{
+                    console.log('得到值')
+                    const target = Dep.target;
+                    target && dep.addWathcer(target)
+                    return value
+                },
+                set:(newValue)=>{
+                    if(value===newValue)return
+                    console.log('设置值')
+                    this.observe(newValue)
+                    value=newValue;
+                    dep.notify(newValue)
+                }
+            })
+        }
+    }
+    class Compiler{
+        constructor(el,vm){
+            this.vm=vm;
+            this.el = this.isElementNode(el)?el:document.querySelector(el);
+            let f = this.compileFragment(this.el);
+            this.compile(f);
+            this.el.appendChild(f)
+        }
+        compile(node){
+            const childNodes = Array.from(node.childNodes);
+            childNodes.forEach(childNode=>{
+                if(this.isElementNode(childNode)){
+                    //标签节点 查找 v- @等 
+                    this.compileElement(childNode)
+                }else if(this.isTextNode(childNode)){
+                    //文本节点 查找{{}}替换 
+                    this.compileText(childNode)
+                }
+                if(childNode.childNodes && childNode.childNodes.length){
+                    this.compile(childNode)
+                }
+            })
+        }
+        compileElement(node){
+            let attributes = Array.from(node.attributes);
+            attributes.forEach(attribute=>{
+                let {name,value} = attribute;
+                if(this.isDirector(name)){
+                    //v-model v-text v-bind v-on:click
+                    let [,driective]=name.split('-');
+                    let [compileKey,eventName] = driective.split(':');
+                    utils[driective](node,value,this.vm,eventName)
+                    console.log(driective)
+                }
+                if(this.isEventName(name)){
+                    //@
+                    const [,eventName] = name.split('@');
+                    utils['on'](node,value,this.vm, eventName)
+                }
+                
+            })
+        }
+        compileText(node){
+            const content = node.textContent;
+            if(/\{\{(.+?)\}\}/g.test(content)){
+                //文本节点 用工具函数替换属性
+                utils['text'](node,content,this.vm)
+            }
+        }
+        compileFragment(el){
+            let fragment = document.createDocumentFragment();
+            let firstChild;
+            while(firstChild=el.firstChild){
+                fragment.appendChild(firstChild)
+            }
+             console.dir(fragment);
+            return fragment
+        }
+        isDirector(name){
+            return name.startsWith('v-');
+        }
+        isEventName(name){
+            return name.startsWith('@');
+        }
+        isElementNode(el){
+            return el.nodeType === 1
+        }
+        isTextNode(el){
+            return el.nodeType === 3
+        }
+    }
+    class Vue{
+        constructor(options){
+            this.$data=typeof options.data === 'function'?options.data():options.data;
+            this.$el=options.el;
+            this.$options=options;
+
+            //数据绑定 添加数据观察者
+            new Observer(this.$data)
+            //模板解析 生成vdom
+            new Compiler(this.$el,this)
+            //数据绑定到this下面
+            this.proxyData(this.$data)
+
+        }
+        proxyData(data){
+            Object.keys(data).forEach(datakey=>{
+                Object.defineProperty(this,datakey,{
+                    get:()=>{
+                        return data[datakey]
+                    },
+                    set:(newVal)=>{
+                        if(data[datakey]===newVal)return
+                        data[datakey]=newVal
+                    }
+                })
+            })
+        }
+    }
+    let vue = new Vue({
+        el:'#app',
+        data(){
+            return {
+                a:1,
+                msg:'我是msg'
+            }
+        },
+        methods:{
+            handler(){
+                this.msg='我是新的msg'
+            }
+        }
+    })
+</script>
+</html>

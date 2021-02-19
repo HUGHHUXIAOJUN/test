@@ -9,7 +9,8 @@
 
 <body>
     <div id="app">
-        <h1>{{ msg }}</h1>
+        <h1>111{{ msg }}</h1>
+        <h2 v-text='msg'></h2>
         <input type="text" v-model='msg'>
         <button v-on:click='handleClick'>v-on:handleClick</button>
         <button @click='handleClick'>@handleClick</button>
