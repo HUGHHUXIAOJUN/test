@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+<script>
+    function quickSort(arr){
+        if(arr.length<2)return arr
+        let left=[],mid=arr.splice(Math.floor(arr.length/2),1),right=[];
+        for(let i=0;i<arr.length;i++){
+            if(arr[i]<mid){
+                left.push(arr[i])
+            }else{
+                right.push(arr[i])
+            }
+        }
+        return [...quickSort(left),...mid,...quickSort(right)]
+    }
+    console.log(quickSort([1,2,3,56,44,33,2,1]))
+    function bubbleSort(arr){
+        for(let i=0;i<arr.length-1;i++){
+            for(let j=0;j<arr.length-i-1;j++){
+                if(arr[j]>arr[j+1]){
+                    let temp=arr[j]
+                    arr[j]=arr[j+1]
+                    arr[j+1]=temp;
+                }
+            }
+        }
+        return arr
+    }
+    console.log(bubbleSort([1,2,3,56,44,33,2,1]))
+    function bubbleSort2(arr){
+        let i=arr.length-1
+        while(i>0){
+            let pos=0;
+            for(let j=0;j<arr.length-1;j++){
+                if(arr[j]>arr[j+1]){
+                    pos=j
+                    let temp=arr[j]
+                    arr[j]=arr[j+1]
+                    arr[j+1]=temp;
+                }
+            }
+            i=pos
+        }
+        return arr
+    }
+    console.log(bubbleSort2([1,2,3,56,44,33,2,1]))
+    function selectSort(arr){
+        for(let i=0;i<arr.length-1;i++){
+            let min=i;
+            for(let j=i+1;j<arr.length;j++){
+                if(arr[j]<arr[min]){
+                    min=j
+                }
+            }
+            let temp=arr[i];
+            arr[i]=arr[min];
+            arr[min]=temp
+        }
+        return arr
+
+    }
+    console.log(selectSort([1,2,3,56,44,33,2,1]))
+    function insterSort(arr){
+        for(let i=1;i<arr.length;i++){
+            let j=i-1,key=arr[i];
+            while(j>=0&&arr[j]>key){
+                arr[j+1]=arr[j];
+                j--;
+            }
+            arr[j+1]=key
+        }
+        return arr
+    }
+    console.log(insterSort([3,1,2,3,56,44,33,2,1]))
+    function _new(fn,...args){
+        let obj=Object.create(fn.prototype)
+        let ret=fn.apply(this,args)
+        return ret instanceof Object?ret:obj
+    }
+</script>
+</html>

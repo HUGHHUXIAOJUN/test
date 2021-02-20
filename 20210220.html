@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <div>1
+            <div>1.1</div>
+        </div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+        <div>5</div>
+        <div>6</div>
+    </div>
+</body>
+<script>
+
+    // function debounce(fn) {
+    //   let timeout = null; // 创建一个标记用来存放定时器的返回值
+    //   return function () {
+    //     clearTimeout(timeout); // 每当用户输入的时候把前一个 setTimeout clear 掉
+    //     timeout = setTimeout(() => { // 然后又创建一个新的 setTimeout, 这样就能保证输入字符后的 interval 间隔内如果还有字符输入的话，就不会执行 fn 函数
+    //         console.log(arguments)
+    //         fn.apply(this, arguments);
+    //     }, 500);
+    //   };
+    // }
+    // function sayHi() {
+    //   console.log('防抖成功');
+    // }
+    // debounce(sayHi)(111)
+    // function throttle(fn, context, delay, text) {
+    //     clearTimeout(fn.timeoutId);
+    //     fn.timeoutId = setTimeout(() => {
+    //         fn.call(context, text);
+    //     }, delay)
+    // }
+    function toPromise(fn){
+        return method=>{
+            return (options)=>{
+                return new Promise((resolve,reject)=>{
+                    fn[method]({
+                        ...options,
+                        success:(res)=>resolve(res),
+                        error:(res)=>reject(res)
+                    })
+                })
+            }
+        }
+    }
+    function debounce(fn){
+        let timeout=null;
+        return function(){
+            clearTimeout(timeout)
+            timeout=setTimeout(()=>{
+                fn.apply(this,arguments)
+            },500)
+        }
+    }
+    function myfn(a){
+        console.log(a)
+    }
+    debounce(myfn)('我是函数')
+    function throttle(fn){
+        let canrun=true;
+        return function(){
+            if(!canrun)return
+            canrun=false;
+            setTimeout(()=>{
+                fn.apply(this,arguments)
+                canrun=true
+            },1000)
+        }
+    }
+    throttle(myfn)('222')
+    function deepNodes(node,nodelist=[]){
+        if(node!==null){
+            nodelist.push(node)
+            let childNode = node.children;
+            for(let i=0; i<childNode.length;i++){
+                deepNodes(childNode[i],nodelist)
+            }
+        }
+        return nodelist
+    }
+    let node=document.querySelector('#app')
+    console.log(deepNodes(node))
+    function deepNodes2(node){
+        let nodes=[],stack=[];
+        if(node){
+            stack.push(node)
+            while(stack.length){
+                let item=stack.shift(),children=item.children;
+                nodes.push(item)
+                for(let i=0;i<children.length;i++){
+                    stack.push(children[i])
+                }
+            }
+        }
+        return nodes
+    }
+    console.log(deepNodes2(node))
+</script>
+</html>

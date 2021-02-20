@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>1111111111111</div>
+</body>
+<script>
+    function _new(fn, ...arg) {
+        const obj = Object.create(fn.prototype);
+        const ret = fn.apply(obj, arg);
+        return ret instanceof Object ? ret : obj;
+    }
+    function _new(fn,...arg){
+        let obj=Object.create(fn.prototype),
+        ret=fn.apply(obj,arg);
+        return ret instanceof Object?ret:obj
+    }
+    function debounce(fn){
+        return function(){
+            clearTimeout(fn.timeoutId)
+            fn.timeoutId=setTimeout(()=>{
+                fn.apply(this,arguments)
+            },500)
+        }
+    }
+    function throttle(fn){
+        console.log(1)
+        let canrun=true
+        console.log(canrun)
+        return function(){
+            if(!canrun)return
+            canrun=false;
+            setTimeout(()=>{
+                fn.apply(this,arguments)
+                canrun=true
+            },1000)
+        }
+    }
+    let div = document.querySelector('div')
+    div.onclick=throttle(odiv)
+    function odiv(){
+        console.log(111)
+    }
+</script>
+</html>
