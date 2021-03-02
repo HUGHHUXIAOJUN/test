@@ -14,6 +14,17 @@
     </div>
 </body>
 <script>
+    function copy(){
+        let textarea = document.createElement('textarea'),
+        content = textarea.value;
+        textarea.readOnly='readOnly';
+        document.body.appendChild(textarea)
+        textarea.select();
+        textarea.setSelectionRange(0,content.length);
+        let result = document.execCommand('copy');
+        textarea.remove();
+        
+    }
     const utils={
         getValue(vm,datakey){
             return vm.$data[datakey.trim()]
