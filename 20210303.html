@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    div{
+        width: 200px;
+        height: 200px;
+        background: red;
+    }
+</style>
+<body>
+    <div onclick='a()'>1</div>
+</body>
+<script>
+    // function Apple() {
+    //     this.a = '一个'
+    // }
+    // Apple.prototype.a='2个'
+    // Apple.prototype.getNum=function(){
+    //     console.log(this.a)
+    // }
+    // class Orange{
+    //     constructor(){
+    //         this.a='2ge'
+    //     }
+    //     getNum(){
+    //         console.log(this.a)
+    //     }
+    // }
+    // let apple = new Apple()
+    // let orange = new Orange();
+    // // for(let i in apple){
+    // //     console.log(apple[i])
+    // // }
+    // // for(let i in orange){
+    // //     console.log(orange[i])
+    // // }
+    // console.log(apple,orange)
+    function deb(fn,del){
+        return function(...args){
+            clearTimeout(fn.timeoutId)
+            fn.timeoutId = setTimeout(()=>{
+                fn.apply(this,args)
+            },del)
+        }
+    }
+    // function throttle(fn,del){
+    //     var pre= Date.now();
+    //     return function(...args){
+    //         let current = Date.now();
+    //         if(current - pre >= del){
+    //             fn.apply(this,args)
+    //             pre = Date.now()
+    //         }
+    //     }
+    // }
+    // function throttle(fn,del){
+    //     let pre =  true;
+    //     return function(...args){
+    //         if(!pre)return
+    //         pre = false;
+    //         setTimeout(()=>{
+    //             fn.apply(this,args)
+    //             pre=true;
+    //         },del)
+    //     }
+    // }
+    function throttle(fn,del){
+        let pre = Date.now();
+        return function(...args){
+            let current = Date.now();
+            let remaining = del - (current - pre);
+            clearTimeout(fn.timeoutId)
+            if(del>=0){
+                fn.timeoutId = setTimeout(()=>{
+                    fn.apply(this,args)
+                    pre = Date.now();
+                },remaining)
+            }else{
+                fn.apply(this,args)
+                pre = Date.now();
+            }
+
+        }
+    }
+    let a=throttle(()=>{
+        console.log(111)
+    },1000)
+</script>
+
+</html>

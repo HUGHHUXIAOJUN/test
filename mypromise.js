@@ -87,3 +87,49 @@ class MyPromise{
 // 第一个resolve执行，执行p事件池中的fn1:fn1执行时返回一个promise实例p1，p1调用then，绑定一个第一次执行then的resolve到p1的事件池中
 // 第二个resolve执行，执行p1事件池中的方法：resolve执行，resolve中的this指向上一级作用域的this，上一级作用域的this是第一个then执行时返回的新实例，所以让第一次执行then的实例的事件池中方法执行；
 
+class MyPromise {
+    constructor(fn) {
+      this.resolvedCallbacks = [];
+      this.rejectedCallbacks = [];
+      
+      this.state = 'PENDING';
+      this.value = '';
+      
+      fn(this.resolve.bind(this), this.reject.bind(this));
+      
+    }
+    
+    resolve(value) {
+      if (this.state === 'PENDING') {
+        this.state = 'RESOLVED';
+        this.value = value;
+        
+        this.resolvedCallbacks.map(cb => cb(value));   
+      }
+    }
+    
+    reject(value) {
+      if (this.state === 'PENDING') {
+        this.state = 'REJECTED';
+        this.value = value;
+        
+        this.rejectedCallbacks.map(cb => cb(value));
+      }
+    }
+    
+    then(onFulfilled, onRejected) {
+      if (this.state === 'PENDING') {
+        this.resolvedCallbacks.push(onFulfilled);
+        this.rejectedCallbacks.push(onRejected);
+        
+      }
+      
+      if (this.state === 'RESOLVED') {
+        onFulfilled(this.value);
+      }
+      
+      if (this.state === 'REJECTED') {
+        onRejected(this.value);
+      }
+    }
+  }

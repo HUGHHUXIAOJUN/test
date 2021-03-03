@@ -48,4 +48,49 @@ const twoSum = (nums, target) => {
 // setTimeout(()=>{
 //     start(2)
 // },1000)
+function depClone(obj){
+  if(typeof obj === 'object'){
+    var result = Array.isArray(obj) === true ? [] : {};
+    for(let key in obj){
+      result[key] = typeof obj[key] === 'object' ? depClone(obj[key]) : obj[key]
+    }
+  }else{
+    var result = obj;
+    return result
+  }
+}
+Function.prototype.call = function (context, ...args) {
+  context = context || window;
+  
+  const fnSymbol = Symbol("fn");
+  context[fnSymbol] = this;
+  
+  context[fnSymbol](...args);
+  delete context[fnSymbol];
+}
+
+//通用柯里化函数
+function curry(func) {
+  // 存储已传入参数
+  let _args = [];
+return function _curry () {
+      if (arguments.length === 0) {
+          return func.apply(this, _args);
+      }
+      Array.prototype.push.apply(_args, [].slice.call(arguments));
+      return arguments.callee;  //返回正被执行的 Function 对象，也就是所指定的 Function 对象的正文，这有利于匿名函数的递归或者保证函数的封装性
+     // return _curry;     //这个也可以
+
+  }
+}
+ 
+function compose() {
+    let args = [].slice.call(arguments);
+    return function (x) {
+        return args.reduce(function(total,current){
+            return current(total)
+        },x)
+         
+    }
+}
 //2
