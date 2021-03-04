@@ -18,13 +18,16 @@
     <div onclick='a()'>1</div>
 </body>
 <script>
-    // function Apple() {
-    //     this.a = '一个'
-    // }
-    // Apple.prototype.a='2个'
-    // Apple.prototype.getNum=function(){
-    //     console.log(this.a)
-    // }
+    function Apple() {
+        this.a = '一个'
+    }
+    function Orange() {
+        this.a = '2个'
+    }
+    Apple.prototype.a='2个'
+    Apple.prototype.getNum=function(){
+        console.log(this.a)
+    }
     // class Orange{
     //     constructor(){
     //         this.a='2ge'
@@ -33,7 +36,13 @@
     //         console.log(this.a)
     //     }
     // }
-    // let apple = new Apple()
+    console.log(Apple.prototype,Apple.__proto__)
+    let apple = new Apple()
+    Apple.prototype = {
+        a:'8个'
+    }
+    console.log(apple.__proto__ === Apple.prototype)
+    console.log(apple.constructor === Apple)
     // let orange = new Orange();
     // // for(let i in apple){
     // //     console.log(apple[i])
@@ -41,7 +50,7 @@
     // // for(let i in orange){
     // //     console.log(orange[i])
     // // }
-    // console.log(apple,orange)
+     console.log(apple)
     function deb(fn,del){
         return function(...args){
             clearTimeout(fn.timeoutId)

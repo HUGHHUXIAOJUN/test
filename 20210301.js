@@ -93,4 +93,4 @@ function compose() {
          
     }
 }
-//2
+//2 非空链表  
