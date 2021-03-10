@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <div>{{msg}}</div>
+        <input v-model='msg' type="text">
+        <div @click='setMsg'>点击</div>
+    </div>
+</body>
+<script>
+    var findMedianSortedArrays = function(nums1, nums2) {
+        const arr = [...nums1, ...nums2].sort((a, b) => a - b);
+        const { length } = arr;
+        return length % 2 ? arr[Math.floor(length / 2)] : (arr[length / 2] + arr[length / 2 - 1]) / 2;
+    };
+    let nu1=[1,2,3,4,5,6,7,8,9,0];
+    let nu2=[11,22,33,4,55,65,67,38,29,10];
+    console.log(Date.now())
+    
+    findMedianSortedArrays(nu1,nu2)
+    console.log(Date.now())
+
+    const utils = {
+        getValue: (vm, key) => {
+            return vm.$data[key.trim()]
+        },
+        setValue: (vm, key, value) => {
+            vm.$data[key] = value;
+        },
+        on(node, content, vm, eventName) {
+            const fn = vm.$options.methods[content];
+            console.log(content)
+            node.addEventListener(eventName, fn.bind(vm))
+        },
+        model(node, content, vm) {
+            let initValue = this.getValue(vm, content)
+            new Watcher(vm, content, (value) => {
+                this.modelUpdate(node, value)
+            })
+            node.addEventListener('input', (e) => {
+                this.setValue(vm, content, e.target.value)
+            }, false)
+            this.modelUpdate(node, initValue)
+        },
+        text(node, content, vm) {
+            let result;
+            if (content.includes('{{')) {
+                //{{}}
+                result = content.replace(/\{\{(.+?)\}\}/g, (...args) => {
+                    new Watcher(vm, args[1], (value) => {
+                        this.textUpdate(node, value)
+                    })
+                    return this.getValue(vm, args[1])
+                })
+            } else {
+                //v-
+                result = this.getValue(vm, content)
+            }
+            this.textUpdate(node, result)
+        },
+        textUpdate(node, content) {
+            console.log(node, content)
+            node.textContent = content;
+        },
+        modelUpdate(node, value) {
+            node.value = value;
+        }
+    }
+    class Watcher {
+        constructor(vm, key, cb) {
+            this.vm = vm;
+            this.key = key;
+            this.cb = cb;
+            this.oldValue = this.getOldValue()
+        }
+        getOldValue() {
+            Dep.target = this;
+            let oldValue = utils.getValue(this.vm, this.key)
+            Dep.target = null
+            return oldValue
+        }
+        upDate(nValue) {
+            if (nValue === this.oldValue) return
+            this.cb(nValue)
+        }
+    }
+    class Dep {
+        constructor() {
+            this.collect = []
+        }
+        addWatcher(watcher) {
+            this.collect.push(watcher)
+        }
+        notify(value) {
+            this.collect.forEach(fn => {
+                fn.upDate(value)
+            })
+        }
+    }
+    class Observable {
+        constructor(data) {
+            console.log('11')
+            this.observer(data)
+        }
+        observer(data) {
+            if (typeof data === 'object') {
+                Object.keys(data).forEach(keys => {
+                    this.reactive(data, keys, data[keys])
+                })
+            }
+        }
+        reactive(data, keys, value) {
+            let dep = new Dep();
+            Object.defineProperty(data, keys, {
+                get: () => {
+                    let target = Dep.target
+                    target && dep.addWatcher(target)
+                    return value
+                },
+                set: (nValue) => {
+                    if (nValue === value) return
+                    this.observer(nValue)
+                    dep.notify(nValue)
+                    value = nValue;
+                }
+            })
+        }
+    }
+    class Compiler {
+        constructor(el, vm) {
+            this.el = this.isNodeElement(el) ? el : document.querySelector(el);
+            this.vm = vm;
+            let fragment = this.compileFragment(this.el);
+            this.compile(fragment)
+            this.el.appendChild(fragment)
+        }
+        compile(f) {
+            let childNodes = Array.from(f.childNodes)
+            childNodes.forEach(node => {
+                if (this.isNodeElement(node)) {
+                    // 标签节点 处理 v-mode on-click @click
+                    console.log(node)
+                    let attrs = Array.from(node.attributes);
+                    attrs.forEach(attr => {
+                        let { name, value } = attr;
+                        if (name.startsWith('@')) {
+                            // click
+                            let [, eventName] = name.split('@')
+                            utils['on'](node, value, this.vm, eventName)
+
+                        } else if (name.startsWith('v-')) {
+                            let [, director] = name.split('v-');
+                            let [compileKey, eventName] = director.split(':');
+                            utils[compileKey](node, value, this.vm, eventName)
+                        }
+                    })
+
+
+                } else if (this.isTextElement(node)) {
+                    // 文本节点  处理 {{ }}
+                    this.textCompile(node)
+                }
+                if (node.childNodes && node.childNodes.length) {
+                    this.compile(node)
+                }
+            })
+
+        }
+        textCompile(node) {
+            let content = node.textContent;
+            if (/\{\{(.+?)\}\}/.test(content)) {
+                utils['text'](node, content, this.vm)
+            }
+
+        }
+        nodeCompile(node) {
+
+        }
+        compileFragment(el) {
+            let f = document.createDocumentFragment();
+            let firstChild;
+            while (firstChild = el.firstChild) {
+                f.appendChild(firstChild)
+            }
+            return f
+        }
+        isNodeElement(el) {
+            return el.nodeType === 1
+        }
+        isTextElement(el) {
+            return el.nodeType === 3
+        }
+    }
+    class Vue {
+        constructor(options) {
+            this.$options = options;
+            this.$data = typeof options.data === 'function' ? options.data() : options.data;
+            this.$el = options.el;
+
+            //触发绑定
+            new Observable(this.$data)
+            //模板编译绑定
+            new Compiler(this.$el, this)
+            //代理数据
+            this.proxyData(this.$data)
+        }
+        proxyData(data) {
+            Object.keys(data).forEach((keys) => {
+                Object.defineProperty(this, keys, {
+                    get: () => {
+                        return data[keys]
+                    },
+                    set: (value) => {
+                        return data[keys] = value
+                    }
+                })
+            })
+        }
+    }
+    let vue = new Vue({
+        data() {
+            return {
+                msg: '我是msg'
+            }
+        },
+        el: '#app',
+        methods: {
+            setMsg() {
+                this.msg = '我是新msg'
+            }
+        }
+    })
+</script>
+
+</html>

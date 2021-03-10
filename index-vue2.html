@@ -44,6 +44,7 @@
                 // {{ xxx }}
                 result= value.replace(/\{\{(.+)\}\}/g, (...args)=>{
                     const expr =args[1];
+                    console.log(args)
                     new Wather(expr,vm,(newVal)=>{
                         this.textUpdater(node,newVal)
                     })
@@ -123,7 +124,7 @@
                 },
                 set: (newVal) => {
                     if (value === newVal) return;
-                   // console.log('$data set ', key, value)
+                    console.log('$data set ', key, value)
                     //防止值 变成对象
                     this.observe(value);
                     value = newVal

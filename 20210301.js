@@ -94,3 +94,15 @@ function compose() {
     }
 }
 //2 非空链表  
+var lengthOfLongestSubstring = function(s) {
+  let len = 0;
+  for(let i = 0; i<s.length; i++){
+      if(s.indexOf(s[i],i)> i){
+        console.log(s.indexOf(s[i],0))
+          len = s.indexOf(s[i],i) - i > len?s.indexOf(s[i],i) - i :1
+      }
+  }
+  console.log(len);
+  return len || 1
+};
+lengthOfLongestSubstring("pwwkew");
