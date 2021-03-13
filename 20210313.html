@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <div>{{msg}}</div>
+        <div v-text='msg'></div>
+        <input type="text" v-model='msg'>
+        <div v-on:click='setMsg' >点击</div>
+        <div @click='setMsg' ></div>
+    </div>
+</body>
+<script>
+    const utils =  {
+        getValue:(vm,key)=>{
+            return vm.$data[key.trim()];
+        },
+        setValue:(vm,key,value)=>{
+            vm.$data[key] = value
+        },
+        text(node,content,vm){
+            let result;
+            if(content.includes('{{')){
+                result =  content.replace(/\{\{(.+?)\}\}/g,(...args)=>{
+                    let key = args[1];
+                    new Watcher(vm,key,(nValue)=>{
+                        this.textUpdater(nValue)
+                    })
+                    return this.getValue(vm,key)
+                })
+            }else{
+                result = this.getValue(vm,content)
+            }
+            console.log('22',result)
+            node.textContent = result
+        },
+        textUpdater(node,value){
+            node.textContent = value;
+        },
+        on(node,value,vm,eventName){
+            let fn = vm.$options.methodes[value]
+            node.addEventListener(eventName,fn.bind(vm),false)
+        },
+        model(node,value,vm){
+            let initValue = this.getValue(vm,value);
+            new Watcher(vm,value,(nvalue)=>{
+                    node.value = nvalue
+            })
+            node.addEventListener('input',(e)=>{
+                let nvalue = e.target.value;
+                this.setValue(vm,value,nvalue)
+                
+            },false)
+            node.value = initValue
+        }   
+    }
+    class Watcher{
+        constructor(vm,key,cb){
+            this.vm = vm;
+            this.dataKey = key;
+            this.cb = cb;
+            this.OldValue =  this.getOldValue()
+        }
+        getOldValue(){
+            Dep.target = this;
+            let value = utils.getValue(this.vm,this.dataKey)
+            Dep.target = null;
+            return value
+        }
+        update(value){
+            let nValue =  utils.getValue(this.vm,this.dataKey)
+            console.log(nValue,this.OldValue)
+            if(nValue !== this.OldValue){
+                this.cb(nValue)
+            }
+            
+        }
+    }
+    class Dep{
+        constructor(){
+            this.collect = []
+        }
+        addWatcher(watcher){
+            this.collect.push(watcher);
+        }
+        notify(){
+            console.log('notify')
+            this.collect.forEach(watcher=>{watcher.update()})
+        }
+    }
+    class Observer{
+        constructor(data){
+            this.observe(data)
+        }
+        observe(data){  
+            if(typeof data === 'object'){
+                Object.keys(data).forEach(key=>{
+                    this.reactive(data,key,data[key])
+                })
+            }
+
+        }
+        reactive(data,key,value){
+            this.observe(value)
+            let dep = new Dep();
+            Object.defineProperty(data,key,{
+                get:()=>{
+                    Dep.target && dep.addWatcher(Dep.target)
+                    return value
+                },
+                set:(nValue)=>{
+                    if(nValue === value)return
+                    this.observe(nValue)
+                    value = nValue;
+                    dep.notify()
+                }
+            })
+        }
+    }
+    class Compiler{
+        constructor(node,vm){
+            this.$el = this.isNodeType(node) ? node : document.querySelector(node);
+            this.vm = vm;
+            let f = this.CompileElement(this.$el);
+            this.compile(f)
+            this.$el.appendChild(f)
+        }
+        compile(f){
+            let node = Array.from(f.childNodes);
+            node.forEach(child=>{
+                if(this.isNodeType(child)){
+                    // v-mode v-text @
+                    
+                    let attributes = Array.from(child.attributes);
+                    
+                    attributes.forEach(attr=>{
+                        
+                        let {name,value} = attr;
+                        if(name.startsWith('v-')){
+                            let [,dirName] = name.split('-');
+                            let [compilekkey,eventName] = dirName.split(':')
+                            console.log(compilekkey,value)
+                            utils[compilekkey](child,value,this.vm,eventName)
+                        }else if(name.startsWith('@')){
+                            let [,eventName] = name.split('@');
+                            utils.on(child,value,this.vm,eventName)
+                        }
+                    })
+                }else if(this.isTextType(child)){
+                    // {{}}
+                    this.compileText(child)
+                }
+                if(child.childNodes && child.childNodes.length){
+                    this.compile(child)
+                }
+            })
+        }
+        compileText(node){
+            let content = node.textContent;
+            if(/\{\{(.+?)\}\}/g.test(content)){
+                //替换data数据
+                console.log(11)
+                utils['text'](node,content,this.vm)
+            }
+        }
+        compileElement(node){
+
+        }
+        CompileElement(node){
+            let firstChild,f = document.createDocumentFragment()
+            while(firstChild = node.firstChild){
+                f.appendChild(firstChild)
+            }
+            return f
+        }
+        isNodeType(node){
+            return node.nodeType === 1
+        }
+        isTextType(node){
+            return node.nodeType === 3
+        }
+    }
+    class Vue {
+        constructor(options){
+            this.$options = options
+            this.$el = options.el;
+            this.$data = options.data();
+            //数据劫持
+            new Observer(this.$data)
+            // 模板数据绑定
+            new Compiler(this.$el,this)
+            //代理数据
+            this.proxyData(this.$data);
+        }
+        proxyData(data){
+            Object.keys(data).forEach(key=>{
+                Object.defineProperty(this,key,{
+                    get:()=>{
+                        
+                        return data[key]
+                    },
+                    set:(nValue)=>{
+                        
+                        data[key] = nValue;
+                    }
+                })
+            })
+        }
+    }
+    let vue = new Vue({
+        el:'#app',
+        data(){
+            return {
+                msg:'我是msg'
+            }
+        },
+        methodes:{
+            setMsg(){
+                this.msg = '我是新msg'
+            }
+        }
+    })
+</script>
+</html>
