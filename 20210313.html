@@ -225,5 +225,23 @@
             }
         }
     })
+    function throttle(fn,delay){
+        let start = Date.now();
+        let timer;
+        return function(...args){
+            let current = Date.now();
+            let remeaning = delay - ( current - start );
+            clearTimeout(timer)
+            if(remeaning >=0){
+                timer = setTimeout(()=>{
+                    fn.aplly(this,args)
+                    start = Date.now()
+                },remeaning)
+            }else{
+                fn.aplly(this,args)
+                start = Date.now()
+            }
+        }
+    }
 </script>
 </html>
