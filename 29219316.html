@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <div>1.1
+                <div>1.1.1</div>
+                <div>1.1.2</div>
+                <div>1.1.3</div>
+            </div>
+            <div>1.2</div>
+            <div>1.3</div>
+        </div>
+        <div>
+            <div>2.1</div>
+            <div>2.2</div>
+            <div>2.3</div>
+        </div>
+        <div>
+            <div>3.1</div>
+            <div>3.2</div>
+            <div>3.3</div>
+        </div>
+    </div>
+</body>
+<script>
+    let divs = document.querySelector('#app')
+    let list = divs;
+    let arr = [];
+    function getChild(list) {
+        if (list !== null) {
+            arr.push(list)
+            let child = list.children;
+            for (let i = 0; i < child.length; i++) {
+                getChild(child[i])
+            }
+        }
+
+        return arr;
+    }
+    // function getChild(list) {
+    //     arr.push(...list)
+    //     // for(let i =0;i<list.length;i++){
+    //     //     if(list[i].children.length){
+    //     //         getChild([...list[i].children])
+    //     //     }
+    //     // }
+    //     return arr;
+    // }
+    //console.log(getChild(list))
+        
+let tabtree = {
+    name: "总章节",
+    children: [
+        {
+            name: '章节一',
+            children: [
+                { name: '小节一',children:[{name:'小节一一'}] },
+                { name: '小节二' }
+            ]
+        },
+        {
+            name: '章节二',
+            children: [
+                { name: '小节一' },
+                { name: '小节二' }
+            ]
+        },
+        {
+            name: '章节三',
+        },
+        {
+            name: '章节四',
+        }
+    ]
+}
+
+const getStr = function({name,children},index){
+    let str = index ? `(${index})${name}` : name
+    if(Array.isArray(children)){
+        let child = children.map((item,key)=>{
+            return getStr(item,index?`${index}.${key+1}`: key+1)
+        })
+        console.log(child)
+        return [str].concat(...child)
+    }
+    return [str]
+} 
+const data = getStr(tabtree)
+console.log(data);
+</script>
+
+</html>

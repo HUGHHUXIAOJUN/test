@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+<script>
+    class pubsub{
+        constructor(){
+            this.collect = {};
+            this.x = 3;
+        }
+        on(event,fn) {
+            (this.collect[event]||(this.collect[event]=[])).push(fn)
+            return this
+        }
+        emmit(event,...args){
+            if(!this.collect[event]) throw new Error('请先添加事件');
+            this.collect[event].forEach(fn=>{
+                // fn.apply(this,args)
+                fn(...args)
+            }) 
+            return this
+        }
+        remove(event,fnc){
+            if(!fnc){
+                this.collect[event]=null;
+            }else{
+                this.collect[event]=this.collect[event].filter(fn=>fn!==fnc)
+            }
+            return this;
+        }
+    }
+    let a = new pubsub();
+    x=3;
+    a.x = 2;
+    a.on('sub',(x)=>{console.log(x)})
+    {
+        a.emmit('sub',this.x)
+    }
+    a.remove('sub')
+    function compose(...args) {
+        return function add(x) {
+            console.log(args,x)
+            return args.reduce((total,current)=>{
+                return current(total)
+            },x)
+        }
+    }
+    function curry(fn) {
+        return function _curry(...argum) {
+            if(argum.length>=fn.length){
+                return  fn.apply(this,argum)
+            }else{
+                return _curry.bind(null,...argum)
+            }
+        }
+    }
+    function addNum(a,b,c) {
+        return a+b+c
+    }
+    function  reduceNum(a) {
+        return a-10
+    }
+    function  reduceNum2(a) {
+        return a+11
+    }
+    // console.log('1',compose(reduceNum,reduceNum2)(10))
+    // let cadd = curry(addNum)
+    // console.log(cadd(1)(2)(3))
+    
+let add = x => x+5;
+let multiply = y => y*10;
+let division = z => z/2;
+ 
+function compose2() {
+    let args = [].slice.call(arguments);
+    return function (x) {
+        console.log(args,x)
+        return args.reduce(function(total,current){
+            return current(total)
+        },x)
+         
+    }
+}
+ 
+let calculate = compose(add,multiply,division);
+let calculate2 = compose2(add,multiply,division);
+console.log(calculate(5)); //5
+console.log(calculate2(5)); //5
+//script start  async1 start  async2  promise1 script end async1 end promise2 setTimeout
+
+
+
+
+</script>
+
+</html>

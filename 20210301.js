@@ -106,3 +106,12 @@ var lengthOfLongestSubstring = function(s) {
   return len || 1
 };
 lengthOfLongestSubstring("pwwkew");
+
+
+function compose(...args){
+  return function(x){
+    return args.reduce(function(total,current){
+      return current(total)
+    },x)
+  }
+}
