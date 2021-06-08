@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .container {
+        width: 80%;
+        min-height: 400px;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    .font-c-light {
+        color: #aaa;
+    }
+
+    .header,
+    .footer {
+        width: 100%;
+        text-align: center;
+    }
+
+    a {
+        text-decoration: none;
+        color: rgba(230, 0, 0, 1)
+    }
+
+    #status {
+        color: #f00;
+    }
+</style>
+
+<body>
+    <header class="header">
+        <h1>HTML5 获取当前系统麦克风音量</h1>
+        <hr>
+    </header>
+
+    <div class="container">
+        <button onclick=beginDetect()>开始检测</button>
+        <p><span id="status"></span></p>
+    </div>
+
+    <footer class="footer">
+        <hr>
+        <p><span class="font-c-light">BY</span> Huooo <span class="font-c-light">AT</span> 2018-08-16 11:00:00</p>
+    </footer>
+</body>
+<script>
+    function beginDetect() {
+        let mystatus = document.getElementById('status')
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)()
+        let mediaStreamSource = null
+        let scriptProcessor = null
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // 获取用户的 media 信息
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                // 将麦克风的声音输入这个对象
+                mediaStreamSource = audioContext.createMediaStreamSource(stream)
+                // 创建一个音频分析对象，采样的缓冲区大小为4096，输入和输出都是单声道
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1)
+                // 将该分析对象与麦克风音频进行连接
+                mediaStreamSource.connect(scriptProcessor)
+                // 此举无甚效果，仅仅是因为解决 Chrome 自身的 bug
+                scriptProcessor.connect(audioContext.destination)
+
+                // 开始处理音频
+                scriptProcessor.onaudioprocess = function (e) {
+                    // 获得缓冲区的输入音频，转换为包含了PCM通道数据的32位浮点数组
+                    let buffer = e.inputBuffer.getChannelData(0)
+                    // 获取缓冲区中最大的音量值
+                    let maxVal = Math.max.apply(Math, buffer)
+                    // 显示音量值
+                    mystatus.innerHTML = '您的音量值：' + Math.round(maxVal * 100);
+                };
+            }).catch((error) => {
+                mystatus.innerHTML = '获取音频时好像出了点问题。' + error
+            })
+        } else {
+            mystatus.innerHTML = '不支持获取媒体接口'
+        }
+    }
+
+
+</script>
+
+</html>
