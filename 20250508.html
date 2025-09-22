@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="submit">上传</button>
+    <button id="pause">暂停</button>
+    <button id="resume">恢复上传</button>
+    <!--导入SDK文件-->
+    <script
+      type="text/javascript"
+      src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.18.0.min.js"
+    ></script>
+    <script type="text/javascript">
+      const client = new OSS({
+       // yourRegion填写Bucket所在地域。以华东1（杭州）为例，yourRegion填写为oss-cn-hangzhou。
+       region: 'yourRegion',
+       authorizationV4: true,
+       // 从STS服务获取的临时访问密钥（AccessKey ID和AccessKey Secret）。
+       accessKeyId: 'yourAccessKeyId',
+       accessKeySecret: 'yourAccessKeySecret',
+       // 从STS服务获取的安全令牌（SecurityToken）。
+       stsToken: 'yourSecurityToken',
+       // 填写Bucket名称，例如examplebucket。
+       bucket: "examplebucket",
+    });
+      // 生成用于断点续传上传的文件，大小为100 MB。
+      const fileContent = Array(1024 * 1024 * 100)
+        .fill("a")
+        .join("");
+      const file = new File([fileContent], "multipart-upload-file");
+      // 上传至Bucket内Object的完整路径，例如exampledir/exampleobject.txt。
+      const name = "test.txt";
+      // 定义中断点。
+      let abortCheckpoint;
+      // 获取上传和中断DOM。
+      const submit = document.getElementById("submit");
+      const pause = document.getElementById("pause");
+      // 获取续传DOM。
+      const resume = document.getElementById("resume");
+
+      // 监听上传按钮，单击后“上传“后开始上传。
+      submit.addEventListener("click", () => {
+        client
+          .multipartUpload(name, file, {
+            progress: (p, cpt, res) => {
+              // 为中断点赋值。
+              abortCheckpoint = cpt;
+              console.log(abortCheckpoint);
+              // 获取上传进度。
+              console.log(p * 100);
+            },
+          })
+          .then((r) => console.log(r));
+      });
+      // 监听暂停按钮。
+      pause.addEventListener("click", () => {
+        // 暂停上传。
+        client.cancel();
+      });
+
+      const resumeUpload = async () => {
+        // 设置重试次数为五次。
+        try {
+          const result = await client.multipartUpload(name, file, {
+            checkpoint: abortCheckpoint,
+            progress: (p, cpt, res) => {
+              // 为了实现断点上传，您可以在上传过程中保存断点信息（checkpoint）。发生上传错误后，将已保存的checkpoint作为参数传递给multipartUpload，此时将从上次上传失败的地方继续上传。
+              abortCheckpoint = cpt;
+              // 获取上传进度。
+              console.log(p);
+            },
+          });
+          console.log(result);
+        } catch (e) {
+          console.log(e);
+        }
+      };
+
+      // 监听续传按钮，单击”恢复上传“后继续上传。
+      resume.addEventListener("click", async () => {
+        await resumeUpload();
+      });
+    </script>
+  </body>
+</html>
+            
