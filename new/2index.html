@@ -1,0 +1,834 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生AI对话系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 4.7.0 - BootCDN 源 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="/js/sockjs.min.js"></script>
+    <script src="/js/stomp.min.js"></script>
+    <script>
+        // 配置Tailwind自定义颜色和字体
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // 主色调：靛蓝色
+                        secondary: '#10B981', // 辅助色：绿色
+                        neutral: '#F3F4F6', // 中性色：浅灰
+                        dark: '#1F2937', // 深色
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .message-bubble-left {
+                border-radius: 18px 18px 18px 0;
+            }
+            .message-bubble-right {
+                border-radius: 18px 18px 0 18px;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+<div class="min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-comments text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">学生AI对话系统</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" id="stuEnId" placeholder="输入加密学生ID"
+                           class="py-2 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                           value="S+J4oDPeqdA7W78VMOg4aw=="> <!-- 已填充加密学生ID -->
+                </div>
+                <button id="verifyBtn" class="bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg transition-all flex items-center">
+                    <i class="fa fa-key mr-2"></i>验证
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 container mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
+        <!-- 左侧会话列表 -->
+        <div class="w-full lg:w-80 bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-120px)] sticky top-20">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="font-semibold text-lg">我的会话</h2>
+                <button id="createConversationBtn" class="bg-primary hover:bg-primary/90 text-white p-2 rounded-full transition-all">
+                    <i class="fa fa-plus"></i>
+                </button>
+            </div>
+
+            <div class="p-3 border-b border-gray-100">
+                <div class="relative">
+                    <input type="text" placeholder="搜索会话..."
+                           class="w-full py-2 px-4 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+            <div id="conversationList" class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-1">
+                <!-- 会话列表将通过JavaScript动态生成 -->
+                <div class="text-center text-gray-500 py-10">
+                    <i class="fa fa-comment-o text-4xl mb-3 opacity-30"></i>
+                    <p>请先验证学生ID并创建会话</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧聊天区域 -->
+        <div id="chatArea" class="flex-1 flex flex-col bg-white rounded-xl shadow-sm h-[calc(100vh-120px)] sticky top-20 hidden">
+            <!-- 聊天头部 -->
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                    <h2 id="currentConversationName" class="font-semibold">会话名称</h2>
+                    <p id="currentConversationIdEl" class="text-sm text-gray-500 truncate"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="text-gray-500 hover:text-primary p-2 rounded-full hover:bg-gray-100 transition-all">
+                        <i class="fa fa-history"></i>
+                    </button>
+                    <button id="deleteConversationBtn" class="text-gray-500 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-all relative group">
+                        <i class="fa fa-trash"></i>
+                        <span class="absolute right-full mr-2 bottom-0 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                删除会话
+                            </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 聊天消息区域 -->
+            <div id="messageContainer" class="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+                <!-- 欢迎消息 -->
+                <div class="flex justify-center">
+                        <span class="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
+                            开始对话吧！
+                        </span>
+                </div>
+
+                <!-- 消息将通过JavaScript动态生成 -->
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-end gap-2">
+                    <div class="flex-1 relative">
+                            <textarea id="messageInput" rows="3" placeholder="输入消息..."
+                                      class="w-full py-3 px-4 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"></textarea>
+                        <div class="absolute right-3 bottom-3 text-gray-400">
+                            <i class="fa fa-smile-o mr-2 cursor-pointer hover:text-primary"></i>
+                            <i class="fa fa-paperclip cursor-pointer hover:text-primary"></i>
+                        </div>
+                    </div>
+                    <button id="sendMessageBtn" class="bg-primary hover:bg-primary/90 text-white p-3 rounded-full transition-all flex items-center justify-center">
+                        <i class="fa fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-4">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2025 学生AI对话系统 - 版权所有</p>
+        </div>
+    </footer>
+</div>
+
+<!-- 删除确认模态框 -->
+<div id="deleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded-xl w-full max-w-md fade-in">
+        <div class="text-center mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+                <i class="fa fa-trash text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">确认删除会话？</h3>
+            <p class="text-gray-500 mt-2" id="deleteModalMessage">此操作将永久删除该会话及其所有消息，不可恢复。</p>
+        </div>
+        <div class="flex space-x-3 mt-6">
+            <button id="cancelDeleteBtn" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">
+                取消
+            </button>
+            <button id="confirmDeleteBtn" class="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all">
+                确认删除
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 加载中模态框 -->
+<div id="loadingModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded-xl flex flex-col items-center">
+        <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+        <p id="loadingText" class="text-gray-700">处理中...</p>
+    </div>
+</div>
+
+<!-- 通知提示 -->
+<div id="notification" class="fixed top-4 right-4 max-w-xs bg-white shadow-lg rounded-lg p-4 transform translate-x-full transition-transform duration-300 z-50 flex items-start">
+    <div id="notificationIcon" class="mr-3 text-xl mt-0.5">
+        <i class="fa fa-check-circle text-green-500"></i>
+    </div>
+    <div class="flex-1">
+        <h3 id="notificationTitle" class="font-medium text-gray-900">成功</h3>
+        <p id="notificationMessage" class="text-sm text-gray-600 mt-1">操作已完成</p>
+    </div>
+    <button id="closeNotification" class="text-gray-400 hover:text-gray-600 ml-2">
+        <i class="fa fa-times"></i>
+    </button>
+</div>
+
+<script>
+    // 全局变量
+    let baseUrl = '/api/dify/huihua';
+    let currentStuEnId = '';
+    let currentConversationId = '';
+    let currentPageNum = 1;
+    const pageSize = 20;
+    let stompClient = null;
+    let currentRequestId = null;
+
+    // DOM元素
+    const stuEnIdInput = document.getElementById('stuEnId');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const createConversationBtn = document.getElementById('createConversationBtn');
+    const conversationList = document.getElementById('conversationList');
+    const chatArea = document.getElementById('chatArea');
+    const currentConversationName = document.getElementById('currentConversationName');
+    const currentConversationIdEl = document.getElementById('currentConversationIdEl');
+    const messageContainer = document.getElementById('messageContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const deleteConversationBtn = document.getElementById('deleteConversationBtn');
+    const deleteModal = document.getElementById('deleteModal');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const deleteModalMessage = document.getElementById('deleteModalMessage');
+    const loadingModal = document.getElementById('loadingModal');
+    const loadingText = document.getElementById('loadingText');
+    const notification = document.getElementById('notification');
+    const notificationTitle = document.getElementById('notificationTitle');
+    const notificationMessage = document.getElementById('notificationMessage');
+    const closeNotification = document.getElementById('closeNotification');
+
+    // 显示加载中
+    function showLoading(text = '处理中...') {
+        loadingText.textContent = text;
+        loadingModal.classList.remove('hidden');
+    }
+
+    // 隐藏加载中
+    function hideLoading() {
+        loadingModal.classList.add('hidden');
+    }
+
+    // 显示通知
+    function showNotification(title, message, isError = false) {
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+
+        const iconElement = notificationIcon.querySelector('i');
+        if (isError) {
+            iconElement.className = 'fa fa-exclamation-circle text-red-500';
+        } else {
+            iconElement.className = 'fa fa-check-circle text-green-500';
+        }
+
+        notification.classList.remove('translate-x-full');
+
+        // 3秒后自动关闭
+        setTimeout(() => {
+            hideNotification();
+        }, 3000);
+    }
+
+    // 隐藏通知
+    function hideNotification() {
+        notification.classList.add('translate-x-full');
+    }
+
+    // 显示删除确认模态框
+    function showDeleteModal() {
+        if (!currentConversationId) return;
+
+        const convName = currentConversationName.textContent || '当前会话';
+        deleteModalMessage.textContent = `此操作将永久删除"${convName}"及其所有消息，不可恢复。`;
+        deleteModal.classList.remove('hidden');
+    }
+
+    // 隐藏删除确认模态框
+    function hideDeleteModal() {
+        deleteModal.classList.add('hidden');
+    }
+
+    // 验证学生ID
+    verifyBtn.addEventListener('click', async () => {
+        const stuEnId = stuEnIdInput.value.trim();
+        if (!stuEnId) {
+            showNotification('错误', '请输入加密学生ID', true);
+            return;
+        }
+
+        showLoading('验证中...');
+
+        try {
+            // 调用带验证逻辑的会话列表加载函数
+            const isVerified = await loadConversationsWithVerify(stuEnId);
+            if (isVerified) {
+                currentStuEnId = stuEnId;
+                showNotification('验证成功', '学生ID验证通过');
+            } else {
+                showNotification('验证失败', '学生ID无效或无权限', true);
+            }
+        } catch (error) {
+            showNotification('错误', '验证失败：' + error.message, true);
+            console.error('验证失败：', error);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // 创建新会话
+    createConversationBtn.addEventListener('click', async () => {
+        if (!currentStuEnId) {
+            showNotification('错误', '请先验证学生ID', true);
+            return;
+        }
+
+        showLoading('创建会话中...');
+
+        try {
+            const response = await fetch(`${baseUrl}/create?stuEnId=${encodeURIComponent(currentStuEnId)}`);
+            const result = await response.json();
+
+            if (result.status) {
+                const conversationId = result.data;
+                showNotification('成功', '会话创建成功');
+                // 重新加载会话列表
+                await loadConversations();
+                // 打开新创建的会话
+                await openConversation(conversationId);
+            } else {
+                showNotification('失败', result.msg || '创建会话失败', true);
+            }
+        } catch (error) {
+            showNotification('错误', '创建会话失败：' + error.message, true);
+            console.error('创建会话失败：', error);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // 删除会话
+    deleteConversationBtn.addEventListener('click', showDeleteModal);
+    cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+    confirmDeleteBtn.addEventListener('click', async () => {
+        if (!currentStuEnId || !currentConversationId) {
+            hideDeleteModal();
+            return;
+        }
+
+        showLoading('删除会话中...');
+
+        try {
+            // 这里是删除会话的前端逻辑，您需要根据实际后端接口修改
+            // 模拟删除操作，实际项目中请替换为真实API调用
+            console.log(`删除会话: ${currentConversationId}, 学生ID: ${currentStuEnId}`);
+
+            // 模拟API调用延迟
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            // 假设删除成功，实际项目中应根据API返回结果处理
+            showNotification('成功', '会话已成功删除');
+
+            // 隐藏聊天区域
+            chatArea.classList.add('hidden');
+
+            // 重新加载会话列表
+            await loadConversations();
+
+            // 重置当前会话ID
+            currentConversationId = '';
+
+            // 断开WebSocket连接
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect();
+            }
+        } catch (error) {
+            showNotification('错误', '删除会话失败：' + error.message, true);
+            console.error('删除会话失败：', error);
+        } finally {
+            hideLoading();
+            hideDeleteModal();
+        }
+    });
+
+    // 带验证逻辑的会话列表加载函数
+    async function loadConversationsWithVerify(stuEnId) {
+        try {
+            const response = await fetch(`${baseUrl}/huihuaList?stuEnId=${encodeURIComponent(stuEnId)}&pageNum=1&pageSize=${pageSize}`);
+            const result = await response.json();
+
+            if (result.status) {
+                // 兼容 list 和 records 两种字段名
+                const conversations = result.data.list || result.data.records || [];
+                renderConversationList(conversations);
+
+                if (conversations.length === 0) {
+                    conversationList.innerHTML = `
+                            <div class="text-center text-gray-500 py-10">
+                                <i class="fa fa-comment-o text-4xl mb-3 opacity-30"></i>
+                                <p>暂无会话，请创建新会话</p>
+                            </div>
+                        `;
+                }
+                return true; // 验证成功
+            } else {
+                return false; // 验证失败（接口返回status: false）
+            }
+        } catch (error) {
+            console.error('加载会话列表失败：', error);
+            return false;
+        }
+    }
+
+    // 加载会话列表
+    async function loadConversations() {
+        if (!currentStuEnId) return false;
+        return loadConversationsWithVerify(currentStuEnId);
+    }
+
+    // 渲染会话列表
+    function renderConversationList(conversations) {
+        conversationList.innerHTML = '';
+
+        conversations.forEach(conv => {
+            const convItem = document.createElement('div');
+            convItem.className = `p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all ${currentConversationId === conv.conversationId ? 'bg-primary/10 border-l-4 border-primary' : ''}`;
+            convItem.dataset.conversationId = conv.conversationId || conv.huihuaId; // 兼容不同的字段名
+
+            // 格式化时间
+            const createTime = conv.createTime ? new Date(conv.createTime).toLocaleString() : '';
+
+            convItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-medium text-gray-900 truncate">${conv.name || '未命名会话'}</h3>
+                        <span class="text-xs text-gray-500">${createTime}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1 line-clamp-1">${conv.initialQuery || '无初始消息'}</p>
+                    <div class="mt-2 flex justify-between items-center">
+                        <span class="text-xs px-2 py-0.5 rounded-full ${conv.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${conv.status === 'active' ? '活跃' : '已关闭'}
+                        </span>
+                    </div>
+                `;
+
+            convItem.addEventListener('click', () => {
+                openConversation(conv.conversationId || conv.huihuaId, conv.name);
+            });
+
+            conversationList.appendChild(convItem);
+        });
+    }
+
+    // 打开会话
+    async function openConversation(conversationId, conversationName = '') {
+        if (!currentStuEnId || !conversationId) return;
+
+        currentConversationId = conversationId;
+        currentConversationName.textContent = conversationName || '会话';
+        currentConversationIdEl.textContent = `会话ID: ${conversationId}`;
+
+        // 显示聊天区域
+        chatArea.classList.remove('hidden');
+
+        // 更新会话列表选中状态
+        document.querySelectorAll('#conversationList > div').forEach(item => {
+            if (item.dataset.conversationId === conversationId) {
+                item.classList.add('bg-primary/10', 'border-l-4', 'border-primary');
+            } else {
+                item.classList.remove('bg-primary/10', 'border-l-4', 'border-primary');
+            }
+        });
+
+        // 连接WebSocket
+        connectWebSocket();
+
+        // 加载历史消息
+        loadHistoryMessages();
+    }
+
+    // 连接WebSocket
+    function connectWebSocket() {
+        if (stompClient && stompClient.connected) {
+            return;
+        }
+
+        try {
+            //const socket = new SockJS(`/api/ws?huihuaid=${currentConversationId}&stuEnId=${currentStuEnId}`);
+            const socket = new WebSocket(`/api/ws?huihuaid=${currentConversationId}&stuEnId=${currentStuEnId}`);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = str => console.log(`[STOMP调试] ${str}`);
+            stompClient.connect({}, onWebSocketConnected, onWebSocketError);
+            showNotification('连接中', '正在建立实时连接...');
+        } catch (err) {
+            showNotification('连接失败', `WebSocket连接失败: ${err.message}`, true);
+            console.error('WebSocket连接失败:', err);
+        }
+    }
+
+    // WebSocket连接成功回调
+    function onWebSocketConnected(frame) {
+        const userName = frame.headers['user-name'];
+        if (!userName) {
+            console.error('缺少 user-name 头，headers=', frame.headers);
+            return;
+        }
+
+        // 订阅消息队列
+        const physicalTopic = `/queue/dify-stream-user${userName}`;
+        stompClient.subscribe(physicalTopic, onWebSocketMessageReceived);
+        console.log('已订阅真实物理队列:', physicalTopic);
+
+
+
+        showNotification('连接成功', '实时对话已就绪');
+    }
+
+    // WebSocket错误回调
+    function onWebSocketError(error) {
+        console.error('WebSocket连接错误:', error);
+        showNotification('连接错误', `实时连接错误: ${error.message || '未知错误'}`, true);
+    }
+
+    // WebSocket消息接收回调
+    function onWebSocketMessageReceived(payload) {
+        console.log('收到消息:', payload);
+        try {
+            const response = JSON.parse(payload.body);
+            console.log('解析后消息:', response);
+
+            if (response.requestId && currentRequestId && response.requestId !== currentRequestId) {
+                console.log('请求ID不匹配，忽略消息', '当前:', currentRequestId, '收到:', response.requestId);
+                return;
+            }
+
+            handleStreamResponse(response);
+        } catch (err) {
+            console.error('解析消息失败:', err, '原始内容:', payload.body);
+            showNotification('接收错误', '消息格式错误', true);
+        }
+    }
+
+    // 处理流式响应
+    function handleStreamResponse(response) {
+        if (response.type === 'chunk') {
+            showAiMessage(response.content, true);
+        } else if (response.type === 'finish') {
+            const streamEl = document.getElementById('current-stream');
+            if (streamEl) streamEl.removeAttribute('id');
+            showNotification('完成', 'AI已完成回答');
+        } else if (response.type === 'error') {
+            showNotification('错误', `AI回复错误：${response.content}`, true);
+        }
+    }
+
+    // 加载历史消息
+    async function loadHistoryMessages() {
+        if (!currentStuEnId || !currentConversationId) return;
+
+        showLoading('加载历史消息...');
+
+        try {
+            const response = await fetch(`${baseUrl}/messages?stuEnId=${encodeURIComponent(currentStuEnId)}&huihuaid=${encodeURIComponent(currentConversationId)}&pageNum=1&pageSize=${pageSize}`);
+            const result = await response.json();
+
+            if (result.status) {
+                // 从 records 读取消息列表（兼容list字段）
+                const messages = result.data.records || result.data.list || [];
+                renderMessages(messages);
+            } else {
+                showNotification('失败', result.msg || '加载历史消息失败', true);
+            }
+        } catch (error) {
+            showNotification('错误', '加载历史消息失败：' + error.message, true);
+            console.error('加载历史消息失败：', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 渲染消息
+    function renderMessages(messages) {
+        // 清空现有消息（除了欢迎消息）
+        const welcomeMessage = messageContainer.querySelector('.flex.justify-center');
+        messageContainer.innerHTML = '';
+        if (welcomeMessage && messages.length === 0) {
+            messageContainer.appendChild(welcomeMessage);
+        }
+
+        if (messages.length === 0) {
+            return;
+        }
+
+        // 添加消息
+        messages.forEach(msg => {
+            const isUser = msg.role === 'user';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} fade-in`;
+
+            messageDiv.innerHTML = `
+                    <div class="${isUser ? 'order-2' : 'order-1'} max-w-[80%]">
+                        <div class="${isUser ? 'bg-primary text-white message-bubble-right' : 'bg-gray-100 text-gray-800 message-bubble-left'} p-3">
+                            <p>${formatMessageContent(msg.content)}</p>
+                        </div>
+                        <p class="${isUser ? 'text-right' : ''} text-xs text-gray-500 mt-1">
+                            ${new Date(msg.createTime).toLocaleString()}
+                        </p>
+                    </div>
+                    <div class="${isUser ? 'order-1 mr-2' : 'order-2 ml-2'} w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="${isUser ? 'fa fa-user text-white bg-primary' : 'fa fa-robot text-white bg-gray-400'}"></i>
+                    </div>
+                `;
+// 将新消息插入到容器的最前面，实现倒序显示
+            messageContainer.insertBefore(messageDiv, messageContainer.firstChild);
+          //  messageContainer.appendChild(messageDiv);
+        });
+
+        // 滚动到底部
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 格式化消息内容
+    function formatMessageContent(content) {
+        // 简单处理换行
+        return content.replace(/\n/g, '<br>');
+    }
+
+    // 发送消息
+    sendMessageBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        if (!currentStuEnId || !currentConversationId) {
+            showNotification('错误', '请先选择会话', true);
+            return;
+        }
+
+        if (!stompClient || !stompClient.connected) {
+            showNotification('连接失败', '请先建立连接', true);
+            return;
+        }
+
+        // 先添加本地消息显示
+        addTemporaryMessage(message, true);
+        messageInput.value = '';
+
+        try {
+            currentRequestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+            // const payload = JSON.stringify({
+            //     huihuaid: currentConversationId,
+            //     stuEnId: currentStuEnId,
+            //     message,
+            //     requestId: currentRequestId
+            // });
+            const payload = JSON.stringify({
+                huihuaid: currentConversationId,
+                stuEnId: currentStuEnId,
+                message:JSON.stringify({
+                  type:'txt',
+                  content: message,
+                  fileList: []
+                }),
+                requestId: currentRequestId
+            });
+
+            stompClient.send('/api/dify/stream/send', {}, payload);
+            showNotification('发送成功', '消息已发送');
+        } catch (error) {
+            // 移除临时消息
+            removeTemporaryMessage();
+            showNotification('错误', '发送消息失败：' + error.message, true);
+            // 重新添加用户消息（标记为失败）
+            addTemporaryMessage(message, true, true);
+            console.error('发送消息失败：', error);
+        }
+    }
+
+    // 添加临时消息（发送中）
+    function addTemporaryMessage(content, isUser, isFailed = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} temporary-message fade-in`;
+        messageDiv.dataset.temporary = 'true';
+
+        messageDiv.innerHTML = `
+                <div class="${isUser ? 'order-2' : 'order-1'} max-w-[80%]">
+                    <div class="${isUser ? 'bg-primary text-white message-bubble-right' : 'bg-gray-100 text-gray-800 message-bubble-left'} p-3 ${isFailed ? 'border-2 border-red-500' : ''}">
+                        <p>${formatMessageContent(content)}</p>
+                        ${isFailed ? '<div class="mt-1 text-xs text-red-300"><i class="fa fa-exclamation-circle"></i> 发送失败</div>' : ''}
+                    </div>
+                    <p class="${isUser ? 'text-right' : ''} text-xs text-gray-500 mt-1">
+                        ${isFailed ? '发送失败' : '发送中...'}
+                    </p>
+                </div>
+                <div class="${isUser ? 'order-1 mr-2' : 'order-2 ml-2'} w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="${isUser ? 'fa fa-user text-white bg-primary' : 'fa fa-robot text-white bg-gray-400'}"></i>
+                </div>
+            `;
+
+        // 移除欢迎消息（如果存在）
+        const welcomeMessage = messageContainer.querySelector('.flex.justify-center');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+
+        messageContainer.appendChild(messageDiv);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 移除临时消息
+    function removeTemporaryMessage() {
+        const tempMessages = document.querySelectorAll('.temporary-message');
+        tempMessages.forEach(msg => {
+            messageContainer.removeChild(msg);
+        });
+    }
+
+    // 显示AI消息
+    function showAiMessage(content, isStreaming) {
+        let streamEl = document.getElementById('current-stream');
+        if (!streamEl) {
+            streamEl = document.createElement('div');
+            streamEl.id = 'current-stream';
+            streamEl.className = 'flex justify-start fade-in';
+
+            streamEl.innerHTML = `
+                    <div class="order-1 max-w-[80%]">
+                        <div class="bg-gray-100 text-gray-800 message-bubble-left p-3">
+                            <p></p>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            AI回复中...
+                        </p>
+                    </div>
+                    <div class="order-2 ml-2 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fa fa-robot text-white bg-gray-400"></i>
+                    </div>
+                `;
+
+            // 移除欢迎消息（如果存在）
+            const welcomeMessage = messageContainer.querySelector('.flex.justify-center');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+
+            messageContainer.appendChild(streamEl);
+        }
+
+        // 添加内容
+        const contentEl = streamEl.querySelector('p');
+        contentEl.innerHTML += formatMessageContent(content);
+
+        // 如果流式传输结束，更新时间戳
+        if (!isStreaming) {
+            const timeEl = streamEl.querySelector('.text-xs.text-gray-500');
+            timeEl.textContent = new Date().toLocaleString();
+            streamEl.removeAttribute('id');
+        }
+
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 添加消息
+    function addMessage(content, isUser, time = new Date()) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} fade-in`;
+
+        messageDiv.innerHTML = `
+                <div class="${isUser ? 'order-2' : 'order-1'} max-w-[80%]">
+                    <div class="${isUser ? 'bg-primary text-white message-bubble-right' : 'bg-gray-100 text-gray-800 message-bubble-left'} p-3">
+                        <p>${formatMessageContent(content)}</p>
+                    </div>
+                    <p class="${isUser ? 'text-right' : ''} text-xs text-gray-500 mt-1">
+                        ${new Date(time).toLocaleString()}
+                    </p>
+                </div>
+                <div class="${isUser ? 'order-1 mr-2' : 'order-2 ml-2'} w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="${isUser ? 'fa fa-user text-white bg-primary' : 'fa fa-robot text-white bg-gray-400'}"></i>
+                </div>
+            `;
+
+        // 移除欢迎消息（如果存在）
+        const welcomeMessage = messageContainer.querySelector('.flex.justify-center');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+
+        messageContainer.appendChild(messageDiv);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 关闭通知
+    closeNotification.addEventListener('click', hideNotification);
+
+    // 页面加载时从本地存储恢复状态
+    window.addEventListener('load', () => {
+        const savedStuEnId = localStorage.getItem('stuEnId');
+        if (savedStuEnId) {
+            stuEnIdInput.value = savedStuEnId;
+        }
+    });
+
+    // 监听学生ID输入变化，保存到本地存储
+    stuEnIdInput.addEventListener('change', () => {
+        localStorage.setItem('stuEnId', stuEnIdInput.value.trim());
+    });
+
+    // 页面关闭时断开WebSocket连接
+    window.addEventListener('beforeunload', () => {
+        if (stompClient && stompClient.connected) {
+            stompClient.disconnect();
+        }
+    });
+</script>
+</body>
+</html>

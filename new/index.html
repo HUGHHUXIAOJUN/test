@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <input type="text" id="text_input" oninput="changeInput(event)">
+  <div class="txt">hhhh</div>
+
+  <uni-image data-v-a65555eb=""  class="question_img">
+    <div style="background-image: url(&quot;https://xhsy.banxuewang.com/fq_cuoti_photo/1043/5978719/客观题/007/2024092610213821473.jpg&quot;); background-position: center center; background-size: contain;"></div>
+    <span></span>
+    <img data-src="1121" id="img" h="2" src="https://xhsy.banxuewang.com/fq_cuoti_photo/1043/5978719/客观题/007/2024092610213821473.jpg" draggable="false">
+  </uni-image>
+</body>
+<script>
+
+  let txt = document.getElementsByClassName('txt')[0];
+  let input = document.getElementsByTagName('input')[0];
+  let img = document.getElementById('img');
+    let data = new Proxy({
+    inputValue: ''
+  },{
+    set(obj,key,nvalue,receiver){
+      console.log('触发set')
+      input.value = nvalue;
+      return Reflect.set(obj, key, nvalue, receiver);
+    }
+  })
+  function changeInput(e){
+    data.inputValue = e.target.value;
+  }
+  txt.addEventListener('click',(e)=>{
+    console.log(e.target.innerText)
+  })
+  img.addEventListener('click',(e)=>{
+    console.log(e.target.dataset.src);
+    console.log(e.target.attributes)
+  })
+  let str = `<uni-image data-v-a65555eb=""  class="question_img">
+    <div style="background-image: url(&quot;https://xhsy.banxuewang.com/fq_cuoti_photo/1043/5978719/客观题/007/2024092610213821473.jpg&quot;); background-position: center center; background-size: contain;"></div>
+    <span></span>
+    <img data-src="1121" id="img" h="2" src="https://xhsy.banxuewang.com/fq_cuoti_photo/1043/5978719/客观题/007/2024092610213821473.jpg" draggable="false">
+  </uni-image>`;
+  // str.replace(/<img.+src="(.+?)"/g,(...arguments)=>{
+  //   console.log(arguments)
+  // })
+  // setTimeout(()=>{
+  //   data.inputValue = 3;
+  // },3000)
+  getWeekForma(3,'2025-11-05')
+  function getWeekForma(len,strDate){
+    let res = [];
+    let date = new Date(strDate);//当前日期
+    let week = date.getDay();//当前星期
+    // 获取周一
+    let week1;
+    if(week==0){
+      week1 = date.getTime() - 6 * 86400000
+    }else{
+      week1 = date.getTime() - (week-1) * 86400000
+    }
+    let week7 = week1 + 6 * 86400000;
+    for(let i=0; i<len; i++){
+      res.push({
+        week1: new Date((week1+i*7*86400000)).toLocaleDateString(),
+        week7: new Date((week7+i*7*86400000)).toLocaleDateString(), 
+      })
+    }
+    console.log(res)
+    return  res
+  }
+</script>
+<script src="./index.js"></script>
+<script>
+//   let data2 = {
+//     "page": "1",
+//     "limit": '10'
+// };
+// fetch('https://xhsy.banxuewang.com/Jx/index.php/ExamApi/Work/getWorkList', {
+//     method: 'POST',
+//     headers: {
+//         "authorization": "Bearer piJ1wBzJDp5xp/7jKp8GEA==",
+//         "Content-Type": "application/json" // 添加Content-Type
+//     },
+//     body: JSON.stringify(data2)
+// })
+// .then(response => {
+//     if (!response.ok) {
+//         throw new Error('Network response was not ok');
+//     }
+//     return response.json(); // 解析响应为JSON
+// })
+// .then(data => {
+//     console.log(data); // 处理响应数据
+// })
+// .catch(error => {
+//     console.error('There has been a problem with your fetch operation:', error);
+// });
+</script>
+</html>

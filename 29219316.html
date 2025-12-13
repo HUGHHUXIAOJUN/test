@@ -57,45 +57,74 @@
     // }
     //console.log(getChild(list))
         
-let tabtree = {
-    name: "总章节",
-    children: [
-        {
-            name: '章节一',
-            children: [
-                { name: '小节一',children:[{name:'小节一一'}] },
-                { name: '小节二' }
-            ]
-        },
-        {
-            name: '章节二',
-            children: [
-                { name: '小节一' },
-                { name: '小节二' }
-            ]
-        },
-        {
-            name: '章节三',
-        },
-        {
-            name: '章节四',
-        }
-    ]
-}
+                let tabtree = {
+                    name: "总章节",
+                    children: [
+                        {
+                            name: '章节一',
+                            children: [
+                                { name: '小节一',children:[{name:'小节一一'}] },
+                                { name: '小节二' }
+                            ]
+                        },
+                        {
+                            name: '章节二',
+                            children: [
+                                { name: '小节一' },
+                                { name: '小节二' }
+                            ]
+                        },
+                        {
+                            name: '章节三',
+                        },
+                        {
+                            name: '章节四',
+                        }
+                    ]
+                }
+                function deepTree(obj,index){
+                    let {children=[],name} = obj;
+                    let title = index? `(${index})${name}`: name;
+                    let res = [];
+                    console.log(children)
+                    for(let i=0;i<children.length;i++){
+                        let child = deepTree(children[i],index?`${index}.${i+1}`:i+1)
+                        res = res.concat(child)
 
-const getStr = function({name,children},index){
-    let str = index ? `(${index})${name}` : name
-    if(Array.isArray(children)){
-        let child = children.map((item,key)=>{
-            return getStr(item,index?`${index}.${key+1}`: key+1)
-        })
-        console.log(child)
-        return [str].concat(...child)
-    }
-    return [str]
-} 
-const data = getStr(tabtree)
-console.log(data);
+                    }
+                    return [title].concat(res);
+                }
+           
+
+    const getStr = function({name,children},index){
+        let str = index ? `(${index})${name}` : name
+        if(Array.isArray(children)){
+            let child = children.map((item,key)=>{
+                return getStr(item,index?`${index}.${key+1}`: key+1)
+            })
+            return [str].concat(...child)
+        }
+        return [str]
+    } 
+    const data = getStr(tabtree)
+     console.log(deepTree(tabtree))
+    console.log(data);
+    // function deepTree(arr,str=''){
+    //     let res = [];
+    //     let current = [].concat(arr);
+    //     while(current.length){
+    //         let item = current.shift();
+    //         res.push(str+item.name);
+    //         let children = item.children || []
+    //         if(children.length){
+    //             for(let i=children.length-1;i>=0;i--){
+    //                 current.unshift(children[i])
+    //             }
+    //         }
+    //     }
+    //     return res
+    // }
+
 </script>
 
 </html>

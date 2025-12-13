@@ -1,0 +1,40 @@
+name: Build Electron App
+
+on: [push, pull_request]  # 触发条件：推送代码或创建PR时
+
+jobs:
+  build:
+    runs-on: windows-latest  # 在 Windows 虚拟机上运行
+    
+    steps:
+    # 1. 下载代码到虚拟机
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # 2. 设置 Node.js 18.x 环境
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.20.0'
+        cache: 'npm'  # 缓存 node_modules，加速后续构建
+    
+    # 3. 安装依赖
+    - name: Install dependencies
+      run: npm ci  # 使用 ci 而不是 install，确保依赖版本精确
+    
+    # 4. 构建 Electron 应用
+    - name: Build Electron app
+      run: npm run build:win
+    
+    # 5. 上传构建产物（可选）
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: electron-app
+        path: |
+          dist/*.exe  # 构建产物在 dist 目录下
+    # 6 发布到 GitHub Releases
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.exe

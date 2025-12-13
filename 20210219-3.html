@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="app">
-        <div>ssss {{msg}}</div>
+        <div h="22">ssss {{msg}}</div>
         <input type="text" v-model='msg'>
         <div @click='handler'>{{msg}}</div>
     </div>
@@ -43,9 +43,11 @@
                     console.log(args)
                     return this.getValue(vm,args[1])
                 })
+                
             }else{
                 //v-text
             }
+            console.log(result,2222,value)
             this.textUpdater(node,result)
         },
         model(node,key,vm,eventName){
@@ -146,6 +148,7 @@
         compile(node){
             const childNodes = Array.from(node.childNodes);
             childNodes.forEach(childNode=>{
+                console.log(childNode)
                 if(this.isElementNode(childNode)){
                     //标签节点 查找 v- @等 
                     this.compileElement(childNode)
